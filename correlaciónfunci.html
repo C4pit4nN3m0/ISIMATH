@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISIMath - Regresión Lineal (Simple y Múltiple)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script> 
+    <script src="https://unpkg.com/mathlive" defer></script>
+    <link rel="stylesheet" href="https://unpkg.com/mathlive@0.95.0/dist/mathlive-static.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CSS COMPLETO (Se mantiene el CSS para consistencia) --- */
+        
+        /* --- Variables de Color --- */
+        :root {
+            /* Colores modo claro */
+            --bg-light: #f8fafc;
+            --surface-light: #ffffff;
+            --text-light: #1e293b;
+            --primary-light: #3b82f6; /* Azul */
+            --primary-light-hover: #2563eb; /* Azul más oscuro */
+            --secondary-light: #10b981; /* Verde */
+            --secondary-light-hover: #0d9f76; /* Verde más oscuro */
+            --border-light: #e2e8f0;
+            --error-light: #ef4444; /* Rojo para texto de error */
+            --text-muted-light: #64748b;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+            
+            /* Colores modo oscuro */
+            --bg-dark: #0f172a;
+            --surface-dark: #1e293b;
+            --text-dark: #e2e8f0;
+            --primary-dark: #60a5fa; /* Azul más claro para oscuro */
+            --primary-dark-hover: #93c5fd; /* Azul aún más claro */
+            --secondary-dark: #10b981; /* Verde */
+            --secondary-dark-hover: #34d399; /* Verde más claro */
+            --border-dark: #334155;
+            --error-dark: #f87171; /* Rojo para texto de error */
+            --text-muted-dark: #94a3b8;
+            --shadow-sm-dark: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md-dark: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --shadow-lg-dark: 0 10px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Estilos Base --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        body.dark {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        /* --- Layout Principal --- */
+        .app-container {
+            display: grid;
+            grid-template-columns: minmax(300px, 400px) 1fr;
+            gap: 2rem;
+            min-height: 100vh;
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .app-container {
+                padding: 1rem;
+                gap: 1.5rem;
+            }
+        }
+
+        /* --- Panel de Entrada --- */
+        .input-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: sticky;
+            top: 2rem;
+            height: fit-content;
+        }
+
+        @media (max-width: 1024px) {
+            .input-panel {
+                position: static;
+            }
+        }
+
+        .panel-card {
+            background-color: var(--surface-light);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-md);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .panel-card {
+            background-color: var(--surface-dark);
+            border-color: var(--border-dark);
+            box-shadow: var(--shadow-md-dark);
+        }
+
+        .panel-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-light);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body.dark .panel-title {
+            color: var(--primary-dark);
+        }
+
+        .panel-title svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        /* --- Formulario --- */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-light);
+        }
+
+        body.dark .form-label {
+            color: var(--text-dark);
+        }
+
+        .math-input-container {
+            width: 100%;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            background-color: var(--surface-light);
+            transition: all 0.2s ease;
+            min-height: 60px; /* Altura original para math-field */
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body.dark .math-input-container {
+            background-color: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        .math-input-container:focus-within {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+            outline: none;
+        }
+
+        body.dark .math-input-container:focus-within {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        /* --- ADICIÓN MÍNIMA para que el input de texto funcione dentro del contenedor original --- */
+        .math-input-container.data-input {
+            min-height: 40px; /* Reducimos la altura necesaria para un input de texto simple */
+            display: block;
+        }
+        
+        .math-input-container.data-input input[type="text"] {
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: inherit;
+            font-size: 1rem;
+            padding: 0;
+            outline: none;
+        }
+        /* --- FIN ADICIÓN MÍNIMA --- */
+
+        /* --- Botones --- */
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--primary-light);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+            width: 100%;
+            gap: 0.5rem;
+        }
+
+        body.dark .btn {
+            background-color: var(--primary-dark);
+        }
+
+        .btn:hover {
+            background-color: var(--primary-light-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        body.dark .btn:hover {
+            background-color: var(--primary-dark-hover);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-light);
+        }
+
+        body.dark .btn-secondary {
+            background-color: var(--secondary-dark);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--secondary-light-hover);
+        }
+
+        body.dark .btn-secondary:hover {
+            background-color: var(--secondary-dark-hover);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted-light);
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        body.dark .icon-btn {
+            color: var(--text-muted-dark);
+        }
+
+        .icon-btn:hover {
+            background-color: var(--border-light);
+        }
+
+        body.dark .icon-btn:hover {
+            background-color: var(--border-dark);
+        }
+
+        .icon-btn svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+
+        /* --- Panel de Resultados --- */
+        .output-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* --- Resultado --- */
+        .result-card {
+            background-color: var(--surface-light);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .result-card {
+            background-color: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        .result-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-light);
+            margin-bottom: 1rem;
+        }
+
+        body.dark .result-title {
+            color: var(--primary-dark);
+        }
+
+        .result-content {
+            padding: 1rem;
+            background-color: var(--bg-light);
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        body.dark .result-content {
+            background-color: var(--bg-dark);
+            border-color: var(--border-dark);
+        }
+
+        /* --- Gráfica --- */
+        .graph-container {
+            width: 100%;
+            height: 400px;
+            background-color: var(--surface-light);
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+        }
+
+        body.dark .graph-container {
+            background-color: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        .graph-legend {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        /* Modificación de Leyenda para Regresión */
+        .legend-item.legend-data {
+            color: var(--secondary-light);
+        }
+
+        .legend-item.legend-regression {
+            color: var(--primary-light);
+        }
+
+        body.dark .legend-item.legend-data {
+            color: var(--secondary-dark);
+        }
+
+        body.dark .legend-item.legend-regression {
+            color: var(--primary-dark);
+        }
+
+        .legend-line {
+            width: 20px;
+            height: 2px;
+            border-radius: 1px;
+        }
+
+        .legend-item.legend-data .legend-line {
+            background-color: transparent;
+            border: 1px solid currentColor; /* Para simular un punto */
+            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+        }
+
+        .legend-item.legend-regression .legend-line {
+            background-color: currentColor;
+        }
+        /* Fin Modificación de Leyenda */
+
+
+        /* --- Pasos --- */
+        .steps-container {
+            background-color: var(--surface-light);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .steps-container {
+            background-color: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        .steps-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .step-item {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: var(--bg-light);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-light);
+            transition: all 0.3s ease;
+        }
+
+        body.dark .step-item {
+            background-color: var(--bg-dark);
+            border-left-color: var(--primary-dark);
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: var(--primary-light);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body.dark .step-title {
+            color: var(--primary-dark);
+        }
+
+        .step-title svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .step-rule {
+            font-size: 0.875em;
+            color: var(--text-muted-light);
+            font-style: italic;
+            margin-top: 0.5rem;
+        }
+
+        body.dark .step-rule {
+            color: var(--text-muted-dark);
+        }
+
+        /* --- Mensajes de error --- */
+        .error-message {
+            color: white;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            padding: 0.75rem;
+            background-color: #A00000;
+            border-radius: 6px;
+            border: 1px solid #700000;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body.dark .error-message {
+            color: white;
+            background-color: #8B0000;
+            border-color: #6A0000;
+        }
+
+        .error-message svg {
+            width: 1rem;
+            height: 1rem;
+            flex-shrink: 0;
+        }
+
+        /* --- Toggle de tema --- */
+        .theme-toggle {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background-color: var(--surface-light);
+            color: var(--text-light);
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body.dark .theme-toggle {
+            background-color: var(--surface-dark);
+            color: var(--text-dark);
+            box-shadow: var(--shadow-lg-dark);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        /* --- Estado oculto --- */
+        .hidden {
+            display: none !important;
+        }
+
+        /* --- Estilos específicos para math-field (Manteniendo por consistencia) --- */
+        math-field {
+            flex-grow: 1;
+            font-size: 1.2rem;
+            border: none;
+            padding: 0;
+            background: transparent;
+            min-height: 40px;
+        }
+
+        body.dark math-field {
+            color: var(--text-dark);
+        }
+
+        math-field:focus {
+            outline: none;
+        }
+
+        .ML__frac-line {
+            border-top-width: 1.5px !important;
+        }
+
+        /* --- Iconos SVG --- */
+        .icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        /* --- Animaciones --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Placeholder DENTRO de Plotly (para cuando el gráfico está vacío) */
+        .graph-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            height: 100%;
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--text-muted-light);
+            background-color: var(--bg-light);
+            border-radius: 8px;
+            padding: 20px;
+            /* Asegurar que el placeholder no se muestre si Plotly está inicializado */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        body.dark .graph-placeholder {
+            color: var(--text-muted-dark);
+            background-color: var(--bg-dark);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="input-panel">
+            <div class="panel-card">
+                <h2 class="panel-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                        <line x1="3" y1="20" x2="21" y2="20"></line>
+                    </svg>
+                    Datos para Regresión
+                </h2>
+                <div class="form-group">
+                    <label for="data-x1-input" class="form-label">X₁ (Independiente 1):</label>
+                    <div class="math-input-container data-input">
+                        <input id="data-x1-input" type="text" placeholder="Ej: 1, 2, 3, 4, 5 (Requerido)">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="data-x2-input" class="form-label">X₂ (Independiente 2):</label>
+                    <div class="math-input-container data-input">
+                        <input id="data-x2-input" type="text" placeholder="Ej: 10, 12, 15, 18, 20 (Opcional - Múltiple)">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="data-y-input" class="form-label">Y (Dependiente):</label>
+                    <div class="math-input-container data-input">
+                        <input id="data-y-input" type="text" placeholder="Ej: 3, 5, 4, 6, 7 (Requerido)">
+                    </div>
+                    <div id="data-error" class="error-message hidden">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span id="error-text"></span>
+                    </div>
+                </div>
+                <button id="solve-btn" class="btn">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12H4"></path>
+                        <path d="M12 20v-8"></path>
+                        <path d="M12 4v8"></path>
+                    </svg>
+                    Calcular Regresión
+                </button>
+                <div class="btn-group">
+                    <button id="clear-btn" class="btn btn-secondary">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6L6 18"></path>
+                            <path d="M6 6L18 18"></path>
+                        </svg>
+                        Limpiar
+                    </button>
+                    <button id="theory-btn" class="btn btn-secondary">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Ir a la Teoría
+                    </button>
+                </div>
+            </div>
+            
+            <div class="panel-card">
+                <h2 class="panel-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    Instrucciones
+                </h2>
+                <ul style="padding-left: 1.25rem; color: var(--text-muted-light);">
+                    <li style="margin-bottom: 0.5rem;">Seleccione el tipo de regresión (simple o múltiple)</li>
+                    <li style="margin-bottom: 0.5rem;">Ingrese los valores separados por comas o espacios</li>
+                    <li style="margin-bottom: 0.5rem;">Todos los conjuntos deben tener la misma cantidad de datos</li>
+                    <li style="margin-bottom: 0.5rem;">Para regresión simple: mínimo 2 pares de datos</li>
+                    <li style="margin-bottom: 0.5rem;">Para regresión múltiple: mínimo 3 conjuntos de datos</li>
+                    <li style="margin-bottom: 0.5rem;">El gráfico 3D es interactivo (puede rotarse y hacer zoom)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="output-panel">
+            <div id="result-card" class="result-card hidden fade-in">
+                <h2 class="result-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Resultado de la Regresión
+                </h2>
+                <div class="result-content">
+                    <div id="regression-type" style="font-size: 1.1rem; margin-bottom: 0.75rem;"></div>
+                    <div id="regression-equation" style="font-size: 1.3rem; margin: 1rem 0; font-weight: 600;"></div>
+                    <div id="correlation-r" style="font-size: 1.1rem; margin: 0.5rem 0;"></div>
+                    <div id="determination-r2" style="font-size: 1.1rem; margin: 0.5rem 0;"></div>
+                </div>
+            </div>
+
+            <div id="graph-card" class="result-card fade-in"> 
+                <h2 class="result-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Visualización gráfica
+                </h2>
+                <div id="graph-container" class="graph-container">
+                    <div id="plot" style="width: 100%; height: 100%;">
+                        </div>
+                </div>
+                <div id="graph-legend" class="graph-legend hidden">
+                    <div class="legend-item legend-data">
+                        <span class="legend-line"></span>
+                        <span>Puntos de Datos (X₁, Y)</span>
+                    </div>
+                    <div class="legend-item legend-regression">
+                        <span class="legend-line"></span>
+                        <span>Línea de Regresión ($\hat{y} = b_0 + b_1 x_1$)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="steps-card" class="steps-container hidden fade-in">
+                <div class="steps-header">
+                    <h2 class="result-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Pasos de resolución
+                    </h2>
+                    <button id="toggle-steps-btn" class="btn btn-secondary btn-sm">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                        Mostrar detalle
+                    </button>
+                </div>
+                <div id="steps-content" class="hidden">
+                    <div id="steps-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="theme-toggle" class="theme-toggle">
+        <svg id="theme-icon" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+    </button>
+
+    <script>
+        // Lógica JavaScript para Regresión
+        document.addEventListener('DOMContentLoaded', () => {
+            // Referencias a elementos del DOM
+            const dataX1Input = document.getElementById('data-x1-input');
+            const dataX2Input = document.getElementById('data-x2-input');
+            const dataYInput = document.getElementById('data-y-input');
+            const solveBtn = document.getElementById('solve-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const theoryBtn = document.getElementById('theory-btn');
+            const resultCard = document.getElementById('result-card');
+            const regressionType = document.getElementById('regression-type');
+            const regressionEquation = document.getElementById('regression-equation');
+            const correlationR = document.getElementById('correlation-r');
+            const determinationR2 = document.getElementById('determination-r2');
+            const dataError = document.getElementById('data-error');
+            const errorText = document.getElementById('error-text');
+            const stepsCard = document.getElementById('steps-card');
+            const stepsList = document.getElementById('steps-list');
+            const toggleStepsBtn = document.getElementById('toggle-steps-btn');
+            const stepsContent = document.getElementById('steps-content');
+            // Eliminamos la referencia a graphPlaceholder, ya no se usa para inicializar la gráfica
+            const graphLegend = document.getElementById('graph-legend');
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+
+            let X1 = [];
+            let X2 = [];
+            let Y = [];
+            let B0, B1, B2; // Coeficientes globales para la gráfica
+            let isCurrentMultiple = false; // Estado global para el tema
+
+            let regressionSteps = [];
+
+            const formatNumber = (num) => parseFloat(num.toFixed(6));
+
+            // FUNCIÓN DE GRÁFICA (AHORA SIEMPRE INICIALIZA PLOTLY)
+            const drawGraph = (x1Data, x2Data, yData, b0, b1, b2, isMultiple) => {
+                const plotDiv = document.getElementById('plot');
+                
+                // Limpiar plot si ya existe
+                if (typeof Plotly !== 'undefined' && Plotly.purge) {
+                    Plotly.purge(plotDiv); 
+                }
+
+                const hasData = x1Data && x1Data.length >= 2;
+                const isDarkMode = document.body.classList.contains('dark');
+                const bgColor = isDarkMode ? '#1E293B' : '#FFFFFF';
+                const gridColor = isDarkMode ? '#334155' : '#E2E8F0';
+                const textColor = isDarkMode ? '#E2E8F0' : '#1E293B';
+                const primaryColor = isDarkMode ? '#60a5fa' : '#3b82f6'; // Azul
+                const secondaryColor = isDarkMode ? '#10b981' : '#10b981'; // Verde (para puntos)
+                const colors = [secondaryColor, primaryColor];
+                
+                const dataTraces = [];
+                const config = { responsive: true, displayModeBar: true, displaylogo: false };
+                
+                // Título condicional
+                const baseTitle = isMultiple ? 'Regresión Lineal Múltiple (X₁, X₂, Y)' : 'Regresión Lineal Simple (X₁ vs Y)';
+                const titleText = hasData ? baseTitle : `${baseTitle} (Esperando datos...)`;
+                
+                if (isMultiple) {
+                    // --- 3D PLOT FOR MULTIPLE REGRESSION (Y = b0 + b1*X1 + b2*X2) ---
+
+                    if (hasData) {
+                        // 1. Scatter points (X1, X2, Y)
+                        dataTraces.push({
+                            x: x1Data, // X axis in 3D is X1
+                            y: x2Data, // Y axis in 3D is X2
+                            z: yData,  // Z axis in 3D is Y
+                            type: 'scatter3d',
+                            mode: 'markers',
+                            name: 'Puntos de Datos (X₁, X₂, Y)',
+                            marker: { color: colors[0], size: 5, opacity: 1 }
+                        });
+
+                        // 2. Regression Plane (Surface) - Solo si hay coeficientes válidos
+                        if (b0 !== null && b1 !== null && b2 !== null) {
+                            const B0 = parseFloat(b0);
+                            const B1 = parseFloat(b1);
+                            const B2 = parseFloat(b2);
+
+                            const x1Min = Math.min(...x1Data);
+                            const x1Max = Math.max(...x1Data);
+                            const x2Min = Math.min(...x2Data);
+                            const x2Max = Math.max(...x2Data);
+                            
+                            const nGrid = 10; 
+                            const x1Step = (x1Max - x1Min) / (nGrid - 1);
+                            const x2Step = (x2Max - x2Min) / (nGrid - 1);
+
+                            const x1Grid = Array.from({ length: nGrid }, (_, i) => x1Min + i * x1Step);
+                            const x2Grid = Array.from({ length: nGrid }, (_, i) => x2Min + i * x2Step);
+                            
+                            const zPlane = []; 
+                            
+                            for (const x2_val of x2Grid) {
+                                const zRow = x1Grid.map(x1_val => B0 + B1 * x1_val + B2 * x2_val);
+                                zPlane.push(zRow);
+                            }
+
+                            dataTraces.push({
+                                x: x1Grid,
+                                y: x2Grid,
+                                z: zPlane,
+                                type: 'surface',
+                                name: 'Plano de Regresión',
+                                opacity: 0.6,
+                                colorscale: [[0, primaryColor], [1, primaryColor]], 
+                                showscale: false,
+                                hoverinfo: 'none'
+                            });
+                        }
+                    }
+
+                    const layout = {
+                        title: { text: titleText, font: { size: 16, color: textColor } },
+                        scene: {
+                            xaxis: { title: 'X₁ (Independiente 1)', zeroline: true, zerolinecolor: textColor, color: textColor, backgroundcolor: bgColor, gridcolor: gridColor, range: hasData ? null : [-1, 10] },
+                            yaxis: { title: 'X₂ (Independiente 2)', zeroline: true, zerolinecolor: textColor, color: textColor, backgroundcolor: bgColor, gridcolor: gridColor, range: hasData ? null : [-1, 10] },
+                            zaxis: { title: 'Y (Dependiente)', zeroline: true, zerolinecolor: textColor, color: textColor, backgroundcolor: bgColor, gridcolor: gridColor, range: hasData ? null : [-1, 10] },
+                            bgcolor: bgColor
+                        },
+                        plot_bgcolor: bgColor,
+                        paper_bgcolor: bgColor,
+                        font: { family: 'Inter, Arial, sans-serif', size: 12, color: textColor },
+                        showlegend: hasData,
+                        legend: { x: 0.02, y: 0.98, bgcolor: isDarkMode ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.8)', bordercolor: isDarkMode ? '#334155' : '#E2E8F0', borderwidth: 1, font: { color: textColor } },
+                        margin: { l: 0, r: 0, t: 50, b: 0 }
+                    };
+
+                    Plotly.newPlot(plotDiv, dataTraces, layout, config);
+                    graphLegend.classList.add('hidden'); // Ocultar la leyenda 2D
+
+                } else {
+                    // --- 2D PLOT FOR SIMPLE REGRESSION (Y = b0 + b1*X1) ---
+                    
+                    if (hasData) {
+                        // Puntos de datos
+                        dataTraces.push({
+                            x: x1Data,
+                            y: yData,
+                            type: 'scatter',
+                            mode: 'markers',
+                            name: 'Puntos de Datos',
+                            marker: { color: colors[0], size: 8 }
+                        });
+
+                        // Línea de regresión
+                        if (b0 !== null && b1 !== null) {
+                            const B0 = parseFloat(b0);
+                            const B1 = parseFloat(b1);
+                            const xMin = Math.min(...x1Data);
+                            const xMax = Math.max(...x1Data);
+                            const xLine = [xMin, xMax];
+                            const yLine = [B0 + B1 * xMin, B0 + B1 * xMax];
+
+                            dataTraces.push({
+                                x: xLine,
+                                y: yLine,
+                                type: 'scatter',
+                                mode: 'lines',
+                                name: 'Línea de Regresión',
+                                line: { color: colors[1], width: 3 }
+                            });
+                        }
+                    }
+
+                    const layout = {
+                        title: { text: titleText, font: { size: 16, color: textColor } },
+                        xaxis: { title: 'X₁ (Variable Independiente)', zeroline: true, zerolinecolor: textColor, zerolinewidth: 1, gridcolor: gridColor, gridwidth: 0.5, color: textColor, range: hasData ? null : [-1, 10] },
+                        yaxis: { title: 'Y (Variable Dependiente)', zeroline: true, zerolinecolor: textColor, zerolinewidth: 1, gridcolor: gridColor, gridwidth: 0.5, color: textColor, range: hasData ? null : [-1, 10] },
+                        plot_bgcolor: bgColor,
+                        paper_bgcolor: bgColor,
+                        font: { family: 'Inter, Arial, sans-serif', size: 12, color: textColor },
+                        showlegend: hasData,
+                        legend: { x: 0.02, y: 0.98, bgcolor: isDarkMode ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.8)', bordercolor: isDarkMode ? '#334155' : '#E2E8F0', borderwidth: 1, font: { color: textColor } },
+                        margin: { l: 50, r: 50, t: 50, b: 50 }
+                    };
+                    
+                    Plotly.newPlot(plotDiv, dataTraces, layout, config);
+                    graphLegend.classList.toggle('hidden', !hasData);
+                }
+            };
+
+            // Helpers para pasos (MANTENIDOS)
+            const addStep = (description, formula, rule) => { regressionSteps.push({ description, formula, rule }); };
+            
+            const displaySteps = () => {
+                stepsList.innerHTML = '';
+                regressionSteps.forEach((step, index) => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'step-item fade-in';
+                    stepDiv.style.animationDelay = `${index * 0.1}s`;
+                    stepDiv.innerHTML = `
+                        <div class="step-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 8v4l3 3"></path>
+                            </svg>
+                            Paso ${index + 1}: ${step.description}
+                        </div>
+                        <div style="margin: 10px 0;">
+                            <math-field read-only>${step.formula}</math-field>
+                        </div>
+                        <div class="step-rule">Fórmula o Regla: ${step.rule}</div>
+                    `;
+                    stepsList.appendChild(stepDiv);
+                });
+            };
+            
+            // LÓGICA DE REGRESIÓN (SIMPLE Y MÚLTIPLE)
+
+            const parseAndValidateData = (x1Raw, x2Raw, yRaw) => {
+                // Modificación: Reemplazar comas o espacios por un solo separador (coma) para procesar
+                const normalizeInput = (raw) => raw.split(/[\s,]+/).map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+
+                const x1Data = normalizeInput(x1Raw);
+                const yData = normalizeInput(yRaw);
+                let x2Data = x2Raw ? normalizeInput(x2Raw) : [];
+
+                if (x1Data.length < 2 || yData.length < 2) {
+                    throw new Error("Se requieren al menos 2 pares de datos en X₁ e Y.");
+                }
+                
+                if (x1Data.length !== yData.length) {
+                    throw new Error("Las listas de X₁ e Y deben tener el mismo número de elementos.");
+                }
+
+                if (x2Data.length > 0 && x2Data.length !== yData.length) {
+                    throw new Error("La lista de X₂ debe tener el mismo número de elementos que X₁ e Y.");
+                }
+
+                return { X1: x1Data, X2: x2Data, Y: yData, n: yData.length };
+            };
+            
+            // Nota: Se ha ajustado la función parseAndValidateData en el JS para manejar 'comas o espacios' 
+            // como se indica en la nueva instrucción: `raw.split(/[\s,]+/)`.
+
+            const calculateMultipleRegression = (X1, X2, Y, n) => {
+                const X_matrix = X1.map((x1, i) => [1, x1, X2[i]]);
+                const Y_vector = Y.map(y => [y]); 
+                addStep("Paso 1: Construcción de Matrices $\\mathbf{X}$ y $\\mathbf{Y}$", `$$ \\mathbf{X} = \\begin{pmatrix} 1 & x_{1,1} & x_{2,1} \\\\ \\vdots & \\vdots & \\vdots \\\\ 1 & x_{1,n} & x_{2,n} \\end{pmatrix}, \\quad \\mathbf{Y} = \\begin{pmatrix} y_1 \\\\ \\vdots \\\\ y_n \\end{pmatrix} $$`, "La matriz $\\mathbf{X}$ incluye la columna de unos para el intercepto $b_0$.");
+
+                const X_t = math.transpose(X_matrix);
+                const X_t_X = math.multiply(X_t, X_matrix);
+
+                let X_t_X_inv;
+                try {
+                    X_t_X_inv = math.inv(X_t_X);
+                } catch (e) {
+                    throw new Error("La matriz $X^T X$ no es invertible. Verifique si sus variables X₁ y X₂ tienen una relación lineal perfecta (multicolinealidad).");
+                }
+                
+                const X_t_Y = math.multiply(X_t, Y_vector);
+                addStep("Paso 2: Cálculo de Coeficientes $\\hat{\\beta}$ (Mínimos Cuadrados Ordinarios)", `$$ \\hat{\\beta} = (\\mathbf{X}^T \\mathbf{X})^{-1} \\mathbf{X}^T \\mathbf{Y} $$`, "Fórmula de MCO.");
+                
+                const Beta = math.multiply(X_t_X_inv, X_t_Y);
+                const b0 = formatNumber(Beta[0][0]);
+                const b1 = formatNumber(Beta[1][0]);
+                const b2 = formatNumber(Beta[2][0]);
+
+                addStep("Paso 3: Coeficientes de Regresión Encontrados", `$$ \\hat{\\beta} = \\begin{pmatrix} b_0 \\\\ b_1 \\\\ b_2 \\end{pmatrix} = \\begin{pmatrix} ${b0} \\\\ ${b1} \\\\ ${b2} \\end{pmatrix} $$`, "Se obtienen los coeficientes $b_0, b_1, b_2$ para $\\hat{y} = b_0 + b_1 x_1 + b_2 x_2$.");
+
+                // Cálculo de R^2
+                const Y_hat = X_matrix.map(row => b0 + b1 * row[1] + b2 * row[2]);
+                const meanY = math.mean(Y);
+                let SS_total = 0;
+                let SS_residual = 0;
+                
+                for (let i = 0; i < n; i++) {
+                    SS_total += (Y[i] - meanY) ** 2;
+                    SS_residual += (Y[i] - Y_hat[i]) ** 2;
+                }
+
+                const R2 = SS_total > 0 ? formatNumber(1 - (SS_residual / SS_total)) : 0;
+                addStep("Paso 4: Coeficiente de Determinación ($R^2$)", `$$ R^2 = 1 - \\frac{SS_{residual}}{SS_{total}} = ${R2} $$`, "El $R^2$ mide la proporción de la varianza en Y explicada por el modelo.");
+
+                return { b0, b1, b2, r: null, R2, type: 'Múltiple' };
+            };
+
+            const calculateSimpleRegression = (X, Y, n) => {
+                const sumX = X.reduce((acc, val) => acc + val, 0);
+                const sumY = Y.reduce((acc, val) => acc + val, 0);
+                const meanX = sumX / n;
+                const meanY = sumY / n;
+
+                addStep("Paso 1: Cálculo de las Medias", `$$ \\bar{x} = \\frac{\\sum x}{n} = ${formatNumber(meanX)}, \\quad \\bar{y} = \\frac{\\sum y}{n} = ${formatNumber(meanY)} $$`, "Fórmulas del promedio.");
+                
+                let sumXY = 0;
+                let sumXSquared = 0;
+                let sumYSquared = 0;
+                for (let i = 0; i < n; i++) {
+                    sumXY += X[i] * Y[i];
+                    sumXSquared += X[i] * X[i];
+                    sumYSquared += Y[i] * Y[i];
+                }
+
+                const SSxx = sumXSquared - (sumX * sumX) / n; 
+                const SSyy = sumYSquared - (sumY * sumY) / n; 
+                const SSxy = sumXY - (sumX * sumY) / n;      
+                
+                addStep("Paso 2: Cálculo de Sumas de Cuadrados", `$$ SS_{xy} = \\sum xy - \\frac{(\\sum x)(\\sum y)}{n} = ${formatNumber(SSxy)} $$ $$ SS_{xx} = \\sum x^2 - \\frac{(\\sum x)^2}{n} = ${formatNumber(SSxx)} $$`, "Componentes clave para el cálculo de $b_1$.");
+
+                if (SSxx === 0) { throw new Error("La varianza de X₁ es cero. No se puede calcular la regresión."); }
+                
+                const b1 = SSxy / SSxx;
+                const b0 = meanY - b1 * meanX;
+
+                addStep("Paso 3: Cálculo de Coeficientes $b_1$ y $b_0$", `$$ b_1 = \\frac{SS_{xy}}{SS_{xx}} = ${formatNumber(b1)}, \\quad b_0 = \\bar{y} - b_1 \\bar{x} = ${formatNumber(b0)} $$`, "Fórmulas de los coeficientes de la línea de mejor ajuste.");
+
+                let r = 0;
+                if (SSxx > 0 && SSyy > 0) {
+                    r = SSxy / Math.sqrt(SSxx * SSyy);
+                }
+                const rSquared = r * r;
+                
+                addStep("Paso 4: Coeficiente de Correlación ($r$) y Determinación ($R^2$)", `$$ r = \\frac{SS_{xy}}{\\sqrt{SS_{xx} \\cdot SS_{yy}}} = ${formatNumber(r)}, \\quad R^2 = r^2 = ${formatNumber(rSquared)} $$`, "El $r$ mide la fuerza de la relación lineal; $R^2$ es su cuadrado.");
+
+                return { b0, b1, b2: null, r: formatNumber(r), R2: formatNumber(rSquared), type: 'Simple' };
+            };
+
+
+            const calculateRegression = () => {
+                let parsedData;
+                resultCard.classList.add('hidden');
+                dataError.classList.add('hidden');
+                errorText.textContent = '';
+                stepsCard.classList.add('hidden');
+                regressionSteps = [];
+                
+                try {
+                    parsedData = parseAndValidateData(dataX1Input.value, dataX2Input.value, dataYInput.value);
+                    X1 = parsedData.X1;
+                    X2 = parsedData.X2;
+                    Y = parsedData.Y;
+
+                    let results;
+
+                    if (X2.length > 0) {
+                        isCurrentMultiple = true;
+                        results = calculateMultipleRegression(X1, X2, Y, parsedData.n);
+                    } else {
+                        isCurrentMultiple = false;
+                        results = calculateSimpleRegression(X1, Y, parsedData.n);
+                    }
+                    
+                    const { b0, b1, b2, r, R2, type } = results;
+                    B0 = b0; B1 = b1; B2 = b2; 
+
+                    // Muestra de resultados
+                    regressionType.innerHTML = `<strong>Tipo de Regresión: ${type}</strong>`;
+                    
+                    let equationLatex;
+                    if (type === 'Simple') {
+                        const sign = b1 >= 0 ? '+' : '';
+                        equationLatex = `\\hat{y} = ${formatNumber(b0)} ${sign} ${formatNumber(b1)} x_1`;
+                    } else {
+                        const sign1 = b1 >= 0 ? '+' : '';
+                        const sign2 = b2 >= 0 ? '+' : '';
+                        equationLatex = `\\hat{y} = ${formatNumber(b0)} ${sign1} ${formatNumber(b1)} x_1 ${sign2} ${formatNumber(b2)} x_2`;
+                    }
+
+                    regressionEquation.innerHTML = `<math-field read-only>${equationLatex}</math-field>`;
+                    
+                    if (r !== null) {
+                        correlationR.innerHTML = `Coeficiente de Correlación ($r$): <strong>${r}</strong>`;
+                        correlationR.classList.remove('hidden');
+                    } else {
+                        correlationR.classList.add('hidden');
+                    }
+                    
+                    determinationR2.innerHTML = `Coeficiente de Determinación ($R^2$): <strong>${R2}</strong>`;
+                    
+                    resultCard.classList.remove('hidden');
+                    stepsCard.classList.remove('hidden');
+                    displaySteps();
+                    
+                    drawGraph(X1, X2, Y, b0, b1, b2, isCurrentMultiple);
+
+                } catch (error) {
+                    // Muestra el error de procesamiento de datos
+                    errorText.textContent = 'Error al procesar los datos: ' + error.message;
+                    dataError.classList.remove('hidden');
+                    console.error("Error al calcular la regresión:", error);
+                    
+                    // Si hay error, reinicia los coeficientes pero intenta dibujar la gráfica con los datos que pudo parsear
+                    // Se usa X1, X2 y Y que pueden estar parciales o vacíos, pero se pasan nulos para los coeficientes.
+                    // drawGraph debe manejar esta situación dibujando solo los puntos si existen, o la cuadrícula vacía.
+                    B0 = null; B1 = null; B2 = null;
+                    
+                    // Intenta dibujar la gráfica vacía o con los puntos crudos si hay un error de cálculo (p.ej. varianza cero)
+                    drawGraph(X1, X2, Y, B0, B1, B2, X2.length > 0);
+                }
+            };
+
+            // Event Listeners
+            const clearInterface = () => {
+                dataX1Input.value = '';
+                dataX2Input.value = '';
+                dataYInput.value = '';
+                resultCard.classList.add('hidden');
+                dataError.classList.add('hidden');
+                stepsCard.classList.add('hidden');
+                stepsList.innerHTML = '';
+                graphLegend.classList.add('hidden');
+                X1 = [];
+                X2 = [];
+                Y = [];
+                B0 = null; B1 = null; B2 = null; 
+                isCurrentMultiple = false;
+                regressionSteps = [];
+                // Llama a drawGraph para dibujar el gráfico vacío (Ejes visibles)
+                drawGraph(null, null, null, null, null, null, false); 
+            };
+            
+            solveBtn.addEventListener('click', calculateRegression);
+            clearBtn.addEventListener('click', clearInterface);
+            theoryBtn.addEventListener('click', () => { window.open('https://es.wikipedia.org/wiki/Regresi%C3%B3n_lineal', '_blank'); });
+
+            toggleStepsBtn.addEventListener('click', () => {
+                const isHidden = stepsContent.classList.toggle('hidden');
+                toggleStepsBtn.innerHTML = isHidden 
+                    ? `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>Mostrar detalle`
+                    : `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>Ocultar detalle`;
+            });
+            
+            // Lógica del tema (Mantenida)
+            function setTheme(isDark) {
+                document.body.classList.toggle('dark', isDark);
+                localStorage.setItem('darkMode', isDark);
+                
+                // Actualizar icono (tomado del original)
+                if (isDark) {
+                    themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+                } else {
+                    themeIcon.innerHTML = `<circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
+                }
+                
+                // Redibujar la gráfica para actualizar colores
+                drawGraph(X1, X2, Y, B0, B1, B2, isCurrentMultiple); 
+            }
+
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const storedDarkMode = localStorage.getItem('darkMode') === 'true';
+            setTheme(storedDarkMode || (localStorage.getItem('darkMode') === null && prefersDark));
+
+            themeToggle.addEventListener('click', () => {
+                setTheme(!document.body.classList.contains('dark'));
+            });
+
+            // Dibuja la gráfica inicial (vacía con ejes)
+            drawGraph(null, null, null, null, null, null, false);
+        });
+    </script>
+</body>
+</html>

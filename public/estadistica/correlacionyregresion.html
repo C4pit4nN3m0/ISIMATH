@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISIMath - Correlación y Regresión Lineal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-light: #f8fafc;
+            --surface-light: #ffffff;
+            --text-light: #1e293b;
+            --primary-light: #3b82f6;
+            --primary-light-hover: #2563eb;
+            --secondary-light: #10b981;
+            --secondary-light-hover: #0d9f76;
+            --accent-light: #8b5cf6;
+            --accent-light-hover: #7c3aed;
+            --border-light: #e2e8f0;
+            --error-light: #ef4444;
+            --success-light: #10b981;
+            --text-muted-light: #64748b;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+            
+            --bg-dark: #0f172a;
+            --surface-dark: #1e293b;
+            --text-dark: #e2e8f0;
+            --primary-dark: #60a5fa;
+            --primary-dark-hover: #93c5fd;
+            --secondary-dark: #10b981;
+            --secondary-dark-hover: #34d399;
+            --accent-dark: #a78bfa;
+            --accent-dark-hover: #c4b5fd;
+            --border-dark: #334155;
+            --error-dark: #f87171;
+            --success-dark: #34d399;
+            --text-muted-dark: #94a3b8;
+            --shadow-sm-dark: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md-dark: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --shadow-lg-dark: 0 10px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        body.dark {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: minmax(300px, 400px) 1fr;
+            gap: 2rem;
+            min-height: 100vh;
+            padding: 2rem;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+            }
+        }
+
+        .input-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: sticky;
+            top: 2rem;
+            height: fit-content;
+        }
+
+        @media (max-width: 1024px) {
+            .input-panel {
+                position: static;
+            }
+        }
+
+        .panel-card {
+            background-color: var(--surface-light);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-md);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .panel-card {
+            background-color: var(--surface-dark);
+            border-color: var(--border-dark);
+            box-shadow: var(--shadow-md-dark);
+        }
+
+        .panel-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-light);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body.dark .panel-title {
+            color: var(--primary-dark);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-light);
+        }
+
+        body.dark .form-label {
+            color: var(--text-dark);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            background-color: var(--surface-light);
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        body.dark .input-field {
+            background-color: var(--surface-dark);
+            border-color: var(--border-dark);
+            color: var(--text-dark);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        body.dark .input-field:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            margin: 0.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .radio-input {
+            display: none;
+        }
+
+        .radio-custom {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid var(--border-light);
+            border-radius: 50%;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        body.dark .radio-custom {
+            border-color: var(--border-dark);
+        }
+
+        .radio-input:checked + .radio-custom {
+            border-color: var(--primary-light);
+            background-color: var(--primary-light);
+        }
+
+        body.dark .radio-input:checked + .radio-custom {
+            border-color: var(--primary-dark);
+            background-color: var(--primary-dark);
+        }
+
+        .radio-input:checked + .radio-custom::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0.625rem;
+            height: 0.625rem;
+            background-color: white;
+            border-radius: 50%;
+        }
+
+        .radio-label {
+            font-weight: 500;
+            color: var(--text-light);
+        }
+
+        body.dark .radio-label {
+            color: var(--text-dark);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--primary-light);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+            width: 100%;
+            gap: 0.5rem;
+        }
+
+        body.dark .btn {
+            background-color: var(--primary-dark);
+        }
+
+        .btn:hover {
+            background-color: var(--primary-light-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        body.dark .btn:hover {
+            background-color: var(--primary-dark-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-light);
+        }
+
+        body.dark .btn-secondary {
+            background-color: var(--secondary-dark);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--secondary-light-hover);
+        }
+
+        body.dark .btn-secondary:hover {
+            background-color: var(--secondary-dark-hover);
+        }
+
+        .output-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .result-card {
+            background-color: var(--surface-light);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .result-card {
+            background-color: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        .result-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-light);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body.dark .result-title {
+            color: var(--primary-dark);
+        }
+
+        .steps-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .btn-toggle {
+            background-color: var(--secondary-light);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body.dark .btn-toggle {
+            background-color: var(--secondary-dark);
+        }
+
+        .btn-toggle:hover {
+            background-color: var(--secondary-light-hover);
+        }
+
+        body.dark .btn-toggle:hover {
+            background-color: var(--secondary-dark-hover);
+        }
+
+        .btn-toggle svg {
+            transition: transform 0.3s ease;
+        }
+
+        .btn-toggle.collapsed svg {
+            transform: rotate(-180deg);
+        }
+
+        .collapsible-content {
+            max-height: 5000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .result-item {
+            padding: 1rem;
+            background-color: var(--bg-light);
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+        }
+
+        body.dark .result-item {
+            background-color: var(--bg-dark);
+            border-color: var(--border-dark);
+        }
+
+        .result-item-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted-light);
+            margin-bottom: 0.25rem;
+        }
+
+        body.dark .result-item-title {
+            color: var(--text-muted-dark);
+        }
+
+        .result-item-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+
+        body.dark .result-item-value {
+            color: var(--primary-dark);
+        }
+
+        .equation-display {
+            text-align: center;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background-color: var(--bg-light);
+            border-radius: 8px;
+            border: 2px solid var(--accent-light);
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 1.2rem;
+        }
+
+        body.dark .equation-display {
+            background-color: var(--bg-dark);
+            border-color: var(--accent-dark);
+        }
+
+        .graph-container {
+            width: 100%;
+            height: 500px;
+            min-height: 500px;
+            background-color: var(--surface-light);
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+            position: relative;
+        }
+
+        body.dark .graph-container {
+            background-color: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        #plot {
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 500px !important;
+        }
+
+        .error-message {
+            color: white;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            padding: 0.75rem;
+            background-color: #A00000;
+            border-radius: 6px;
+            border: 1px solid #700000;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body.dark .error-message {
+            background-color: #8B0000;
+            border-color: #6A0000;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background-color: var(--surface-light);
+            color: var(--text-light);
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body.dark .theme-toggle {
+            background-color: var(--surface-dark);
+            color: var(--text-dark);
+            box-shadow: var(--shadow-lg-dark);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-item {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: var(--bg-light);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-light);
+        }
+
+        body.dark .step-item {
+            background-color: var(--bg-dark);
+            border-left-color: var(--primary-dark);
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: var(--primary-light);
+            margin-bottom: 0.5rem;
+        }
+
+        body.dark .step-title {
+            color: var(--primary-dark);
+        }
+
+        .step-math {
+            margin: 0.5rem 0;
+            padding: 0.75rem;
+            background-color: var(--surface-light);
+            border-radius: 6px;
+            border: 1px solid var(--border-light);
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+        }
+
+        body.dark .step-math {
+            background-color: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        .help-text {
+            font-size: 0.875rem;
+            color: var(--text-muted-light);
+            margin-top: 0.25rem;
+        }
+
+        body.dark .help-text {
+            color: var(--text-muted-dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="input-panel">
+            <div class="panel-card">
+                <h2 class="panel-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Correlación y Regresión
+                </h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Tipo de regresión:</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="regression-type" value="simple" class="radio-input" checked>
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">Simple (2D)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="regression-type" value="multiple" class="radio-input">
+                            <span class="radio-custom"></span>
+                            <span class="radio-label">Múltiple (3D)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="simple-inputs">
+                    <div class="form-group">
+                        <label for="x-values" class="form-label">Valores X:</label>
+                        <input type="text" id="x-values" class="input-field" placeholder="Ej: 1, 2, 3, 4, 5">
+                        <div class="help-text">Separados por comas o espacios</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="y-values" class="form-label">Valores Y:</label>
+                        <input type="text" id="y-values" class="input-field" placeholder="Ej: 2, 4, 5, 4, 5">
+                        <div class="help-text">Separados por comas o espacios</div>
+                    </div>
+                </div>
+
+                <div id="multiple-inputs" class="hidden">
+                    <div class="form-group">
+                        <label for="x1-values" class="form-label">Valores X₁:</label>
+                        <input type="text" id="x1-values" class="input-field" placeholder="Ej: 1, 2, 3, 4, 5">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="x2-values" class="form-label">Valores X₂:</label>
+                        <input type="text" id="x2-values" class="input-field" placeholder="Ej: 2, 3, 4, 5, 6">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="y-values-mult" class="form-label">Valores Y:</label>
+                        <input type="text" id="y-values-mult" class="input-field" placeholder="Ej: 5, 7, 9, 11, 13">
+                    </div>
+                </div>
+
+                <div id="error-message" class="error-message hidden">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span id="error-text"></span>
+                </div>
+
+                <button id="calculate-btn" class="btn">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="4 17 10 11 4 5"></polyline>
+                        <line x1="12" y1="19" x2="20" y2="19"></line>
+                    </svg>
+                    Calcular
+                </button>
+
+                <div class="btn-group">
+                    <button id="clear-btn" class="btn btn-secondary">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18"></path>
+                            <path d="M6 6L18 18"></path>
+                        </svg>
+                        Limpiar
+                    </button>
+                    <button id="theory-btn" class="btn btn-secondary">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Ir a la Teoría
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <h2 class="panel-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    Instrucciones
+                </h2>
+                <ul style="padding-left: 1.25rem; color: var(--text-muted-light);">
+                    <li style="margin-bottom: 0.5rem;">Seleccione el tipo de regresión (simple o múltiple)</li>
+                    <li style="margin-bottom: 0.5rem;">Ingrese los valores separados por comas o espacios</li>
+                    <li style="margin-bottom: 0.5rem;">Todos los conjuntos deben tener la misma cantidad de datos</li>
+                    <li style="margin-bottom: 0.5rem;">Para regresión simple: mínimo 2 pares de datos</li>
+                    <li style="margin-bottom: 0.5rem;">Para regresión múltiple: mínimo 3 conjuntos de datos</li>
+                    <li style="margin-bottom: 0.5rem;">El gráfico 3D es interactivo (puede rotarse y hacer zoom)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="output-panel">
+            <div id="result-card" class="result-card hidden fade-in">
+                <h2 class="result-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    Resultados
+                </h2>
+                <div id="equation-display" class="equation-display"></div>
+                <div class="results-grid" id="results-grid"></div>
+            </div>
+
+            <div id="graph-card" class="result-card fade-in">
+                <h2 class="result-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Visualización Gráfica
+                </h2>
+                <div id="graph-container" class="graph-container">
+                    <div id="plot" style="width: 100%; height: 100%;"></div>
+                </div>
+            </div>
+
+            <div id="steps-card" class="result-card hidden fade-in">
+                <div class="steps-header">
+                    <h2 class="result-title" style="margin-bottom: 0;">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Pasos de Cálculo
+                    </h2>
+                    <button id="toggle-steps-btn" class="btn-toggle collapsed">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                        Mostrar detalle
+                    </button>
+                </div>
+                <div id="steps-content" class="collapsible-content collapsed">
+                    <div id="steps-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="theme-toggle" class="theme-toggle">
+        <svg id="theme-icon" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+    </button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const regressionTypeRadios = document.querySelectorAll('input[name="regression-type"]');
+            const simpleInputs = document.getElementById('simple-inputs');
+            const multipleInputs = document.getElementById('multiple-inputs');
+            const xValuesInput = document.getElementById('x-values');
+            const yValuesInput = document.getElementById('y-values');
+            const x1ValuesInput = document.getElementById('x1-values');
+            const x2ValuesInput = document.getElementById('x2-values');
+            const yValuesMultInput = document.getElementById('y-values-mult');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const theoryBtn = document.getElementById('theory-btn');
+            const errorDiv = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            const resultCard = document.getElementById('result-card');
+            const stepsCard = document.getElementById('steps-card');
+            const stepsList = document.getElementById('steps-list');
+            const equationDisplay = document.getElementById('equation-display');
+            const resultsGrid = document.getElementById('results-grid');
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            const toggleStepsBtn = document.getElementById('toggle-steps-btn');
+            const stepsContent = document.getElementById('steps-content');
+
+            let currentType = 'simple';
+            let calculationSteps = [];
+
+            // Toggle de pasos
+            toggleStepsBtn.addEventListener('click', () => {
+                const isCollapsed = stepsContent.classList.toggle('collapsed');
+                toggleStepsBtn.classList.toggle('collapsed');
+                toggleStepsBtn.innerHTML = isCollapsed 
+                    ? `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>Mostrar detalle`
+                    : `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>Ocultar detalle`;
+            });
+
+            const parseValues = (text) => {
+                if (!text || text.trim() === '') return [];
+                return text.trim()
+                    .split(/[\s,]+/)
+                    .map(v => parseFloat(v))
+                    .filter(v => !isNaN(v));
+            };
+
+            regressionTypeRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    currentType = e.target.value;
+                    if (currentType === 'simple') {
+                        simpleInputs.classList.remove('hidden');
+                        multipleInputs.classList.add('hidden');
+                    } else {
+                        simpleInputs.classList.add('hidden');
+                        multipleInputs.classList.remove('hidden');
+                    }
+                    resultCard.classList.add('hidden');
+                    stepsCard.classList.add('hidden');
+                    errorDiv.classList.add('hidden');
+                    drawEmptyGraph();
+                });
+            });
+
+            const calculateSimpleRegression = (x, y) => {
+                calculationSteps = [];
+                const n = x.length;
+                
+                const sumX = x.reduce((a, b) => a + b, 0);
+                const sumY = y.reduce((a, b) => a + b, 0);
+                const sumXY = x.reduce((acc, xi, i) => acc + xi * y[i], 0);
+                const sumX2 = x.reduce((acc, xi) => acc + xi * xi, 0);
+                const sumY2 = y.reduce((acc, yi) => acc + yi * yi, 0);
+                const meanX = sumX / n;
+                const meanY = sumY / n;
+
+                calculationSteps.push({
+                    title: 'Paso 1: Datos básicos',
+                    content: `n = ${n} datos
+Σx = ${sumX.toFixed(4)}
+Σy = ${sumY.toFixed(4)}
+Σxy = ${sumXY.toFixed(4)}
+Σx² = ${sumX2.toFixed(4)}
+Σy² = ${sumY2.toFixed(4)}
+x̄ = ${meanX.toFixed(4)}
+ȳ = ${meanY.toFixed(4)}`
+                });
+
+                const numeratorR = n * sumXY - sumX * sumY;
+                const denominatorR = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+                const r = numeratorR / denominatorR;
+                const r2 = r * r;
+
+                calculationSteps.push({
+                    title: 'Paso 2: Coeficiente de correlación (r)',
+                    content: `r = [n·Σxy - Σx·Σy] / √[(n·Σx² - (Σx)²)(n·Σy² - (Σy)²)]
+Numerador = ${numeratorR.toFixed(4)}
+Denominador = ${denominatorR.toFixed(4)}
+r = ${r.toFixed(6)}
+r² = ${r2.toFixed(6)}`
+                });
+
+                const b = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+                const a = meanY - b * meanX;
+
+                calculationSteps.push({
+                    title: 'Paso 3: Cálculo de pendiente (b)',
+                    content: `b = (n·Σxy - Σx·Σy) / (n·Σx² - (Σx)²)
+b = ${b.toFixed(6)}`
+                });
+
+                calculationSteps.push({
+                    title: 'Paso 4: Cálculo de intercepto (a)',
+                    content: `a = ȳ - b·x̄
+a = ${meanY.toFixed(4)} - ${b.toFixed(6)}·${meanX.toFixed(4)}
+a = ${a.toFixed(6)}`
+                });
+
+                const yPred = x.map(xi => a + b * xi);
+                const ssr = yPred.reduce((acc, ypi, i) => acc + Math.pow(ypi - meanY, 2), 0);
+                const sse = y.reduce((acc, yi, i) => acc + Math.pow(yi - yPred[i], 2), 0);
+                const sst = y.reduce((acc, yi) => acc + Math.pow(yi - meanY, 2), 0);
+
+                return {
+                    a, b, r, r2,
+                    equation: `y = ${a.toFixed(4)} + ${b.toFixed(4)}x`,
+                    yPred,
+                    ssr, sse, sst,
+                    type: 'simple'
+                };
+            };
+
+            const calculateMultipleRegression = (x1, x2, y) => {
+                calculationSteps = [];
+                const n = x1.length;
+
+                const sumX1 = x1.reduce((a, b) => a + b, 0);
+                const sumX2 = x2.reduce((a, b) => a + b, 0);
+                const sumY = y.reduce((a, b) => a + b, 0);
+                const sumX1Y = x1.reduce((acc, x1i, i) => acc + x1i * y[i], 0);
+                const sumX2Y = x2.reduce((acc, x2i, i) => acc + x2i * y[i], 0);
+                const sumX1X2 = x1.reduce((acc, x1i, i) => acc + x1i * x2[i], 0);
+                const sumX1_2 = x1.reduce((acc, x1i) => acc + x1i * x1i, 0);
+                const sumX2_2 = x2.reduce((acc, x2i) => acc + x2i * x2i, 0);
+
+                calculationSteps.push({
+                    title: 'Paso 1: Sumatorias básicas',
+                    content: `n = ${n}
+Σx₁ = ${sumX1.toFixed(4)}
+Σx₂ = ${sumX2.toFixed(4)}
+Σy = ${sumY.toFixed(4)}
+Σx₁y = ${sumX1Y.toFixed(4)}
+Σx₂y = ${sumX2Y.toFixed(4)}
+Σx₁x₂ = ${sumX1X2.toFixed(4)}
+Σx₁² = ${sumX1_2.toFixed(4)}
+Σx₂² = ${sumX2_2.toFixed(4)}`
+                });
+
+                const X = [
+                    [n, sumX1, sumX2],
+                    [sumX1, sumX1_2, sumX1X2],
+                    [sumX2, sumX1X2, sumX2_2]
+                ];
+                const Y = [sumY, sumX1Y, sumX2Y];
+
+                calculationSteps.push({
+                    title: 'Paso 2: Sistema de ecuaciones normales',
+                    content: `Método de mínimos cuadrados ordinarios
+(X'X) · β = X'Y`
+                });
+
+                const coefficients = solveLinearSystem(X, Y);
+                const [b0, b1, b2] = coefficients;
+
+                calculationSteps.push({
+                    title: 'Paso 3: Coeficientes de regresión',
+                    content: `b₀ = ${b0.toFixed(6)}
+b₁ = ${b1.toFixed(6)}
+b₂ = ${b2.toFixed(6)}`
+                });
+
+                const meanY = sumY / n;
+                const yPred = x1.map((x1i, i) => b0 + b1 * x1i + b2 * x2[i]);
+                const ssr = yPred.reduce((acc, ypi) => acc + Math.pow(ypi - meanY, 2), 0);
+                const sst = y.reduce((acc, yi) => acc + Math.pow(yi - meanY, 2), 0);
+                const r2 = ssr / sst;
+                const r = Math.sqrt(r2);
+
+                calculationSteps.push({
+                    title: 'Paso 4: Coeficiente de determinación',
+                    content: `R² = ${r2.toFixed(6)}
+R = ${r.toFixed(6)}`
+                });
+
+                return {
+                    b0, b1, b2, r, r2,
+                    equation: `y = ${b0.toFixed(4)} + ${b1.toFixed(4)}x₁ + ${b2.toFixed(4)}x₂`,
+                    yPred,
+                    type: 'multiple'
+                };
+            };
+
+            const solveLinearSystem = (A, b) => {
+                const n = A.length;
+                const aug = A.map((row, i) => [...row, b[i]]);
+
+                for (let i = 0; i < n; i++) {
+                    let maxRow = i;
+                    for (let k = i + 1; k < n; k++) {
+                        if (Math.abs(aug[k][i]) > Math.abs(aug[maxRow][i])) {
+                            maxRow = k;
+                        }
+                    }
+                    [aug[i], aug[maxRow]] = [aug[maxRow], aug[i]];
+
+                    for (let k = i + 1; k < n; k++) {
+                        const factor = aug[k][i] / aug[i][i];
+                        for (let j = i; j <= n; j++) {
+                            aug[k][j] -= factor * aug[i][j];
+                        }
+                    }
+                }
+
+                const x = new Array(n);
+                for (let i = n - 1; i >= 0; i--) {
+                    x[i] = aug[i][n];
+                    for (let j = i + 1; j < n; j++) {
+                        x[i] -= aug[i][j] * x[j];
+                    }
+                    x[i] /= aug[i][i];
+                }
+
+                return x;
+            };
+
+            const showError = (message) => {
+                errorText.textContent = message;
+                errorDiv.classList.remove('hidden');
+            };
+
+            const hideError = () => {
+                errorDiv.classList.add('hidden');
+            };
+
+            const displayResults = (results) => {
+                equationDisplay.innerHTML = `<strong>Ecuación de regresión:</strong><br>${results.equation}`;
+                
+                resultsGrid.innerHTML = '';
+                
+                if (results.type === 'simple') {
+                    const items = [
+                        { title: 'Coef. Correlación (r)', value: results.r.toFixed(6) },
+                        { title: 'Coef. Determinación (R²)', value: results.r2.toFixed(6) },
+                        { title: 'Intercepto (a)', value: results.a.toFixed(6) },
+                        { title: 'Pendiente (b)', value: results.b.toFixed(6) }
+                    ];
+                    items.forEach(item => {
+                        resultsGrid.innerHTML += `
+                            <div class="result-item">
+                                <div class="result-item-title">${item.title}</div>
+                                <div class="result-item-value">${item.value}</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    const items = [
+                        { title: 'Coef. Correlación (R)', value: results.r.toFixed(6) },
+                        { title: 'Coef. Determinación (R²)', value: results.r2.toFixed(6) },
+                        { title: 'Intercepto (b₀)', value: results.b0.toFixed(6) },
+                        { title: 'Coeficiente b₁', value: results.b1.toFixed(6) },
+                        { title: 'Coeficiente b₂', value: results.b2.toFixed(6) }
+                    ];
+                    items.forEach(item => {
+                        resultsGrid.innerHTML += `
+                            <div class="result-item">
+                                <div class="result-item-title">${item.title}</div>
+                                <div class="result-item-value">${item.value}</div>
+                            </div>
+                        `;
+                    });
+                }
+
+                resultCard.classList.remove('hidden');
+                
+                // Scroll suave al card de resultados
+                resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            };
+
+            const displaySteps = () => {
+                stepsList.innerHTML = '';
+                calculationSteps.forEach(step => {
+                    stepsList.innerHTML += `
+                        <div class="step-item">
+                            <div class="step-title">${step.title}</div>
+                            <div class="step-math">${step.content}</div>
+                        </div>
+                    `;
+                });
+                stepsCard.classList.remove('hidden');
+            };
+
+            const drawSimpleGraph = (x, y, results) => {
+                const isDark = document.body.classList.contains('dark');
+                const xMin = Math.min(...x) - 1;
+                const xMax = Math.max(...x) + 1;
+                const xLine = [xMin, xMax];
+                const yLine = xLine.map(xi => results.a + results.b * xi);
+
+                const trace1 = {
+                    x: x,
+                    y: y,
+                    mode: 'markers',
+                    type: 'scatter',
+                    name: 'Datos',
+                    marker: {
+                        size: 10,
+                        color: isDark ? '#60a5fa' : '#3b82f6',
+                        line: { width: 2, color: 'white' }
+                    }
+                };
+
+                const trace2 = {
+                    x: xLine,
+                    y: yLine,
+                    mode: 'lines',
+                    type: 'scatter',
+                    name: 'Regresión',
+                    line: { color: isDark ? '#34d399' : '#10b981', width: 3 }
+                };
+
+                const layout = {
+                    title: 'Regresión Lineal Simple',
+                    xaxis: { title: 'X', gridcolor: isDark ? '#334155' : '#e2e8f0' },
+                    yaxis: { title: 'Y', gridcolor: isDark ? '#334155' : '#e2e8f0' },
+                    plot_bgcolor: isDark ? '#1e293b' : '#ffffff',
+                    paper_bgcolor: isDark ? '#1e293b' : '#ffffff',
+                    font: { color: isDark ? '#e2e8f0' : '#1e293b' },
+                    showlegend: true
+                };
+
+                Plotly.newPlot('plot', [trace1, trace2], layout, { responsive: true, displaylogo: false });
+            };
+
+            const drawMultipleGraph = (x1, x2, y, results) => {
+                const isDark = document.body.classList.contains('dark');
+                
+                const trace1 = {
+                    x: x1,
+                    y: x2,
+                    z: y,
+                    mode: 'markers',
+                    type: 'scatter3d',
+                    name: 'Datos observados',
+                    marker: {
+                        size: 8,
+                        color: y,
+                        colorscale: 'Viridis',
+                        showscale: true,
+                        opacity: 0.8,
+                        line: {
+                            color: isDark ? '#60a5fa' : '#3b82f6',
+                            width: 1
+                        }
+                    }
+                };
+
+                const x1Min = Math.min(...x1);
+                const x1Max = Math.max(...x1);
+                const x2Min = Math.min(...x2);
+                const x2Max = Math.max(...x2);
+                
+                const x1Range = [];
+                const x2Range = [];
+                const steps = 20;
+                
+                for (let i = 0; i <= steps; i++) {
+                    x1Range.push(x1Min + (x1Max - x1Min) * i / steps);
+                    x2Range.push(x2Min + (x2Max - x2Min) * i / steps);
+                }
+                
+                const zSurface = [];
+                for (let i = 0; i < x1Range.length; i++) {
+                    const row = [];
+                    for (let j = 0; j < x2Range.length; j++) {
+                        row.push(results.b0 + results.b1 * x1Range[i] + results.b2 * x2Range[j]);
+                    }
+                    zSurface.push(row);
+                }
+
+                const trace2 = {
+                    x: x1Range,
+                    y: x2Range,
+                    z: zSurface,
+                    type: 'surface',
+                    name: 'Plano de regresión',
+                    colorscale: 'Viridis',
+                    opacity: 0.7,
+                    showscale: false
+                };
+
+                const layout = {
+                    title: {
+                        text: 'Regresión Lineal Múltiple',
+                        font: { size: 16, color: isDark ? '#e2e8f0' : '#1e293b' }
+                    },
+                    scene: {
+                        xaxis: { 
+                            title: 'X₁',
+                            gridcolor: isDark ? '#334155' : '#e2e8f0',
+                            backgroundcolor: isDark ? '#1e293b' : '#ffffff'
+                        },
+                        yaxis: { 
+                            title: 'X₂',
+                            gridcolor: isDark ? '#334155' : '#e2e8f0',
+                            backgroundcolor: isDark ? '#1e293b' : '#ffffff'
+                        },
+                        zaxis: { 
+                            title: 'Y',
+                            gridcolor: isDark ? '#334155' : '#e2e8f0',
+                            backgroundcolor: isDark ? '#1e293b' : '#ffffff'
+                        },
+                        camera: {
+                            eye: { x: 1.5, y: 1.5, z: 1.3 }
+                        }
+                    },
+                    plot_bgcolor: isDark ? '#1e293b' : '#ffffff',
+                    paper_bgcolor: isDark ? '#1e293b' : '#ffffff',
+                    font: { color: isDark ? '#e2e8f0' : '#1e293b' }
+                };
+
+                Plotly.newPlot('plot', [trace2, trace1], layout, { responsive: true, displaylogo: false });
+            };
+
+            const drawEmptyGraph = () => {
+                const isDark = document.body.classList.contains('dark');
+                const layout = {
+                    title: currentType === 'simple' ? 'Regresión Lineal Simple' : 'Regresión Lineal Múltiple',
+                    xaxis: { title: 'X' },
+                    yaxis: { title: 'Y' },
+                    plot_bgcolor: isDark ? '#1e293b' : '#ffffff',
+                    paper_bgcolor: isDark ? '#1e293b' : '#ffffff',
+                    font: { color: isDark ? '#e2e8f0' : '#1e293b' }
+                };
+                Plotly.newPlot('plot', [], layout, { responsive: true, displaylogo: false });
+            };
+
+            calculateBtn.addEventListener('click', () => {
+                hideError();
+                
+                if (currentType === 'simple') {
+                    const x = parseValues(xValuesInput.value);
+                    const y = parseValues(yValuesInput.value);
+
+                    if (x.length < 2 || y.length < 2) {
+                        showError('Se necesitan al menos 2 pares de datos');
+                        return;
+                    }
+
+                    if (x.length !== y.length) {
+                        showError('X e Y deben tener la misma cantidad de datos');
+                        return;
+                    }
+
+                    const results = calculateSimpleRegression(x, y);
+                    displayResults(results);
+                    displaySteps();
+                    drawSimpleGraph(x, y, results);
+                } else {
+                    const x1 = parseValues(x1ValuesInput.value);
+                    const x2 = parseValues(x2ValuesInput.value);
+                    const y = parseValues(yValuesMultInput.value);
+
+                    if (x1.length < 3 || x2.length < 3 || y.length < 3) {
+                        showError('Se necesitan al menos 3 datos para regresión múltiple');
+                        return;
+                    }
+
+                    if (x1.length !== x2.length || x1.length !== y.length) {
+                        showError('X₁, X₂ e Y deben tener la misma cantidad de datos');
+                        return;
+                    }
+
+                    const results = calculateMultipleRegression(x1, x2, y);
+                    displayResults(results);
+                    displaySteps();
+                    drawMultipleGraph(x1, x2, y, results);
+                }
+            });
+
+            clearBtn.addEventListener('click', () => {
+                xValuesInput.value = '';
+                yValuesInput.value = '';
+                x1ValuesInput.value = '';
+                x2ValuesInput.value = '';
+                yValuesMultInput.value = '';
+                resultCard.classList.add('hidden');
+                stepsCard.classList.add('hidden');
+                hideError();
+                drawEmptyGraph();
+            });
+
+            theoryBtn.addEventListener('click', () => {
+                window.open('https://es.wikipedia.org/wiki/Regresi%C3%B3n_lineal', '_blank');
+            });
+
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark');
+                const isDark = document.body.classList.contains('dark');
+                
+                if (isDark) {
+                    themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+                } else {
+                    themeIcon.innerHTML = `<circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
+                }
+                
+                drawEmptyGraph();
+            });
+
+            drawEmptyGraph();
+        });
+    </script>
+</body>
+</html>
